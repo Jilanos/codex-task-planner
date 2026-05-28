@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import json
+import logging
+import os
 import sys
 
 from .exporter import export_plan
@@ -12,8 +15,18 @@ from .storage import load_plan, write_plan
 from .validation import validate_plan
 
 
+def _configure_logging(level: str | None) -> None:
+    raw = level or os.environ.get("CODEX_TASK_PLANNER_LOG", "WARNING")
+    logging.basicConfig(
+        level=getattr(logging, raw.upper(), logging.WARNING),
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+        stream=sys.stderr,
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="codex-task-planner")
+    parser.add_argument("--log-level", default=None)
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     create = subparsers.add_parser("create", help="create a new durable plan")
@@ -35,6 +48,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    _configure_logging(args.log_level)
     try:
         if args.command == "create":
             request = load_request(args.request_file)
@@ -46,6 +60,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"tasks {len(plan.tasks)}")
             print(f"modes {len(plan.modes)}")
             print(f"generated_runs {len(plan.generated_runs)}")
+            print("CODEX_TASK_PLANNER_RESULT " + json.dumps({
+                "plan_id": plan.plan_id,
+                "plan_dir": str(directory),
+                "tasks": len(plan.tasks),
+                "modes": len(plan.modes),
+                "generated_runs": len(plan.generated_runs),
+            }, sort_keys=True))
             return 0
         if args.command == "inspect":
             plan = load_plan(args.plan_id)
