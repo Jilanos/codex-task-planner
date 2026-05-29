@@ -160,6 +160,28 @@ Detected request components include:
 
 The current planner intentionally favors predictable output over deep semantic understanding.
 
+## Task Feature Extraction
+
+Every generated task includes a `features` dictionary in `tasks.jsonl` and in each harness task file. The feature vector is deterministic and designed for downstream similarity matching and model routing.
+
+Fields:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `task_type` | string | `implementation`, `test`, `documentation`, `packaging`, `verification`, `refactor` |
+| `domains` | list[string] | Sorted list of detected domains: `cli`, `validation`, `error_handling`, `tests`, `documentation`, `packaging`, `persistence`, `api`, `auth`, `security`, `refactor`, `migration`, `logging`, `benchmark`, `export`, `performance`, `configuration`, `concurrency` |
+| `has_*` | bool | One boolean flag per domain for fast vector distance computation |
+| `has_io` | bool | True when `cli` or `api` domain is active |
+| `has_state` | bool | True when `persistence` domain is active |
+| `complexity_estimate` | string | `low`, `medium`, or `high` based on domain count and dependency count |
+| `domain_count` | int | Number of active domains |
+| `dependency_count` | int | Number of upstream task dependencies |
+| `acceptance_criteria_count` | int | Number of acceptance criteria items |
+| `check_count` | int | Number of configured check commands |
+| `prompt_word_count` | int | Word count of the task prompt |
+
+The feature vector is used by `codex-task-supervisor recommend` to find the most similar historical tasks and select the model that performed best on them.
+
 ## Execution Harness Integration
 
 An external harness can read `generated_runs.jsonl`, then load each referenced `task_file`. Each task file contains the model, reasoning effort, workspace, checks, timeout, output root, and a complete prompt.

@@ -23,3 +23,6 @@ codex-task-planner = "codex_task_planner.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["py.typed"]
