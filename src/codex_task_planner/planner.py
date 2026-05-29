@@ -9,6 +9,7 @@ from datetime import timezone
 from pathlib import Path
 from typing import Any
 
+from .features import extract_task_features
 from .ids import make_mode_id, make_plan_id, make_run_id, make_task_id, utc_now
 from .models import GeneratedRun, Matrix, Mode, Plan, Task
 
@@ -125,6 +126,8 @@ def build_tasks(request: str, checks: list[str]) -> list[Task]:
     for index, spec in enumerate(task_specs, start=1):
         task_id = make_task_id(index)
         dependencies = _resolve_dependencies(spec, tasks)
+        task_checks = list(checks)
+        features = extract_task_features(spec, request, len(dependencies))
         tasks.append(
             Task(
                 task_id=task_id,
@@ -135,7 +138,8 @@ def build_tasks(request: str, checks: list[str]) -> list[Task]:
                 prompt=spec["prompt"],
                 local_context=spec["local_context"],
                 acceptance_criteria=spec["acceptance_criteria"],
-                checks=list(checks),
+                checks=task_checks,
+                features=features,
             )
         )
     return tasks

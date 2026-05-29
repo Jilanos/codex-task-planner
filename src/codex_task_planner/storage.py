@@ -57,7 +57,7 @@ def load_matrix_snapshot(plan_id_value: str, root: str | Path = DEFAULT_ROOT) ->
 
 
 def build_harness_task(plan: Plan, task: Task, run: GeneratedRun) -> dict[str, object]:
-    return {
+    harness_task: dict[str, object] = {
         "task_id": run.run_id,
         "prompt": render_harness_prompt(plan, task),
         "model": run.model,
@@ -67,6 +67,9 @@ def build_harness_task(plan: Plan, task: Task, run: GeneratedRun) -> dict[str, o
         "output_root": run.output_root,
         "timeout_seconds": run.timeout_seconds,
     }
+    if task.features:
+        harness_task["features"] = task.features
+    return harness_task
 
 
 def _write_json(path: Path, data: dict[str, object]) -> None:

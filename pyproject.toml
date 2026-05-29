@@ -4,11 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "codex-task-planner"
-version = "0.1.0"
+version = "0.2.0"
 description = "Deterministic local task planner for generating Codex harness task files."
 readme = "README.md"
 requires-python = ">=3.10"
-authors = [{ name = "codex-task-planner contributors" }]
 license = { text = "MIT" }
 keywords = ["codex", "planning", "tasks", "cli"]
 classifiers = [
