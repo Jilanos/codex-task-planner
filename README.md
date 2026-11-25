@@ -1,60 +1,58 @@
 # codex-task-planner
 
-`codex-task-planner` is a local, deterministic task planning tool for turning one high-level coding request into structured planning files and harness-ready task files.
+Turn one coding request into structured plan files and harness-ready task files, locally and deterministically.
 
-It exists to separate planning from execution. The project does not run Codex, does not call an LLM, does not use a database, and does not depend on any existing project. It only writes JSON and JSONL artifacts that another execution harness can consume later.
+## Problem
 
-## What It Does
+Running a coding agent on a large request works better when the request is split into small tasks and run across several models and reasoning efforts. This tool does the planning step only, for people who build or benchmark an execution harness. It does not run Codex, call an LLM, use a database, or depend on another project. It writes JSON and JSONL files that a harness reads later.
 
-- Reads a plain-text coding request.
-- Reads an execution matrix of models and reasoning efforts.
-- Builds a durable plan folder under `.codex-task-planner/plans/`.
-- Decomposes the request into small deterministic subtasks.
-- Adds global context, local context, dependencies, acceptance criteria, and checks.
+## Features
+
+- Reads a plain-text coding request and a matrix of models and reasoning efforts.
+- Writes a durable plan folder under `.codex-task-planner/plans/`.
+- Splits the request into small tasks by keyword and pattern detection, with context, dependencies, acceptance criteria and checks.
 - Replicates every task across every model and reasoning effort combination.
-- Writes one harness-compatible JSON task file per generated run.
+- Writes one harness task JSON file per generated run.
+- Adds a deterministic `features` vector to every task, for similarity matching and model routing.
+- Inspects, exports (JSONL) and validates stored plans.
 
-## What It Does Not Do
+It does not execute tasks, score results, or manage remote workspaces.
 
-- It does not execute Codex.
-- It does not call OpenAI, Anthropic, or any other LLM provider.
-- It does not run generated tasks.
-- It does not score results.
-- It does not manage remote workspaces.
+## Quick start
 
-## Installation
+Python 3.10 or later, standard library only.
 
 ```bash
-pip install -e .
+python -m venv .venv
+.venv/bin/pip install -e .
+.venv/bin/codex-task-planner create --request-file examples/requests/simple_request.md --matrix examples/matrices/default.json
 ```
 
-The project uses a `src/` layout and the Python standard library only.
-
-## CLI Usage
-
-Create a plan:
-
-```bash
-codex-task-planner create --request-file examples/requests/simple_request.md --matrix examples/matrices/default.json
-```
-
-Inspect a plan:
+The command prints the plan id and the number of tasks, modes and runs. Then use that id:
 
 ```bash
 codex-task-planner inspect --plan-id PLAN-YYYYMMDD-HHMMSS-abc123
-```
-
-Export generated runs:
-
-```bash
 codex-task-planner export --plan-id PLAN-YYYYMMDD-HHMMSS-abc123 --format jsonl
-```
-
-Validate stored artifacts:
-
-```bash
 codex-task-planner validate --plan-id PLAN-YYYYMMDD-HHMMSS-abc123
 ```
+
+Run the tests:
+
+```bash
+python -m unittest
+```
+
+The tests use no network calls.
+
+## Tech stack
+
+Python (standard library only), `src/` layout, setuptools, unittest, GitHub Actions for the test run.
+
+## Status
+
+Version 0.2.0. See `CHANGELOG.md`. Decomposition is keyword based: it cannot understand project-specific architecture or hidden constraints. The generated tasks are starting points for a later harness, not finished project plans.
+
+Planned: richer decomposition, optional LLM-based decomposition, integration with a Codex execution harness, a supervisor that runs all combinations, a scoring database, and a router that picks the cheapest sufficient mode.
 
 ## Request File Format
 
@@ -136,7 +134,7 @@ The `prompt` includes global context, task instructions, local context, acceptan
 
 ## Deterministic Decomposition
 
-Version 0.1 uses keyword and pattern detection. It always creates at least one implementation task and one final verification task.
+The planner uses keyword and pattern detection. It always creates at least one implementation task and one final verification task.
 
 Detected request components include:
 
@@ -200,26 +198,3 @@ Validation checks for:
 - missing stored `plan.json`
 
 Input loading also reports missing request files, empty requests, invalid matrix files, empty model lists, and empty reasoning effort lists.
-
-## Tests
-
-Run:
-
-```bash
-python -m unittest
-```
-
-The test suite uses no network calls.
-
-## Limitations
-
-Deterministic decomposition cannot fully understand project-specific architecture, hidden constraints, or nuanced sequencing. The generated tasks are designed to be practical starting points for a later execution harness, not perfect project plans.
-
-## Future Roadmap
-
-- v0.2: richer deterministic decomposition
-- v0.3: optional LLM-based decomposition
-- v0.4: integration with a Codex execution harness
-- v0.5: supervisor that runs all task and mode combinations
-- v0.6: scoring and cost efficiency database
-- v0.7: intelligent router that selects the cheapest sufficient execution mode
